@@ -21,7 +21,7 @@ limitations under the License. */
 #include "paddle/phi/kernels/autotune/cache_base.h"
 #include "paddle/phi/kernels/cast_kernel.h"
 #include "paddle/phi/kernels/funcs/blas/blas.h"
-#include "paddle/phi/core/kernel_context.h"
+#include "paddle/phi/core/context.h"
 #include "paddle/phi/common/scalar.h"
 #include "paddle/phi/kernels/funcs/broadcast_function.h"
 #ifdef PADDLE_WITH_HIP
