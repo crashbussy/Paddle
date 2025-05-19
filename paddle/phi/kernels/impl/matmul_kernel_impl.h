@@ -2003,68 +2003,41 @@ void MatmulKernel(const Context& ctx,
   if (x.numel() == 0 || y.numel() == 0) {
     auto x_dims = x.dims();
     auto y_dims = y.dims();
-    if (transpose_x) {
-      std::swap(x_dims[x_dims.size() - 1], x_dims[x_dims.size() - 2]);
+
+    if (transpose_x && x_dims.size() >= 2) {
+      std::swap(const_cast<DDim&>(x_dims)[x_dims.size() - 1],
+                const_cast<DDim&>(x_dims)[x_dims.size() - 2]);
     }
-    if (transpose_y) {
-      std::swap(y_dims[y_dims.size() - 1], y_dims[y_dims.size() - 2]);
+
+    if (transpose_y && y_dims.size() >= 2) {
+      std::swap(const_cast<DDim&>(y_dims)[y_dims.size() - 1],
+                const_cast<DDim&>(y_dims)[y_dims.size() - 2]);
     }
-    std::vector<std::int64_t> out_dims(x_dims.size() - 1 + y_dims.size() - 1);
-    for (int64_t i = 0; i < x_dims.size() - 1; ++i) {
-      out_dims[i] = x_dims[i];
+
+    std::vector<int64_t> x_batch_dims(x_dims.data(), x_dims.data() + x_dims.size() - 2);
+    std::vector<int64_t> y_batch_dims(y_dims.data(), y_dims.data() + y_dims.size() - 2);
+
+    std::vector<int64_t> bcast_dims;
+    if (!funcs::BroadcastTwoVec(x_batch_dims, y_batch_dims, &bcast_dims)) {
+      PADDLE_THROW(phi::errors::InvalidArgument(
+          "Failed to broadcast input batch dimensions."));
     }
-    for (int64_t i = 1; i < y_dims.size(); ++i) {
-      out_dims[x_dims.size() - 1 + i - 1] = y_dims[i];
-    }
-    out->Resize(phi::make_ddim(out_dims));
+
+    std::vector<int64_t> out_shape(bcast_dims.begin(), bcast_dims.end());
+
+    int64_t m = transpose_x ? x_dims[x_dims.size() - 1] : x_dims[x_dims.size() - 2];
+    int64_t n = transpose_y ? y_dims[y_dims.size() - 2] : y_dims[y_dims.size() - 1];
+
+    out_shape.push_back(m);
+    out_shape.push_back(n);
+
+    DDim out_dims = make_ddim(out_shape);
+    out->Resize(out_dims);
     ctx.template Alloc<T>(out);
     return;
   }
-  PADDLE_ENFORCE_GE(
-      common::product(x.dims()),
-      0,
-      common::errors::InvalidArgument(
-          "The dims of Input(X) should be greater than or equal to 0."));
-  PADDLE_ENFORCE_GE(
-      common::product(y.dims()),
-      0,
-      common::errors::InvalidArgument(
-          "The dims of Input(Y) should be greater than or equal to 0."));
-  const std::vector<std::int64_t> x_dims = common::vectorize(x.dims());
-  const std::vector<std::int64_t> y_dims = common::vectorize(y.dims());
-  MatmulJudgeDtypeKernel<Context, T>(
-      ctx, x, y, x_dims, y_dims, out, transpose_x, transpose_y);
-}
 
 template <typename T, typename Context>
-void MatmulWithFlattenKernelImpl(const Context& dev_ctx,
-                                 const DenseTensor& x,
-                                 const DenseTensor& y,
-                                 int x_num_col_dims,
-                                 int y_num_col_dims,
-                                 DenseTensor* out) {
-  const DenseTensor x_matrix =
-      x.dims().size() > 2 ? phi::ReshapeToMatrix(x, x_num_col_dims) : x;
-  const DenseTensor y_matrix =
-      y.dims().size() > 2 ? phi::ReshapeToMatrix(y, y_num_col_dims) : y;
-
-  dev_ctx.template Alloc<T>(out);
-  auto z_dim = out->dims();
-  if (z_dim.size() != 2) {
-    out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
-  }
-
-  auto blas = phi::funcs::GetBlas<Context, T>(dev_ctx);
-
-  blas.MatMul(x_matrix, y_matrix, out);
-  if (z_dim.size() != 2) {
-    out->Resize(z_dim);
-  }
-}
-
-#ifdef PADDLE_WITH_CUDA
-
-template <typename Context>
 void MatmulWithFlattenKernelInt8Impl(const Context& dev_ctx,
                                      const DenseTensor& x,
                                      const DenseTensor& y,
