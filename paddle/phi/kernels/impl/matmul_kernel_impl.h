@@ -2000,6 +2000,10 @@ void MatmulKernel(const Context& ctx,
                   bool transpose_x,
                   bool transpose_y,
                   DenseTensor* out) {
+  if (x.numel() == 0) {
+    dev_ctx.template Alloc<bool>(out);
+    return;
+  }
   if (x.numel() == 0 || y.numel() == 0) {
     auto x_dims = x.dims();
     auto y_dims = y.dims();
