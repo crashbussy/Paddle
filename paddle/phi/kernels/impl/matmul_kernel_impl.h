@@ -21,6 +21,9 @@ limitations under the License. */
 #include "paddle/phi/kernels/autotune/cache_base.h"
 #include "paddle/phi/kernels/cast_kernel.h"
 #include "paddle/phi/kernels/funcs/blas/blas.h"
+#include "paddle/phi/core/context.h"
+#include "paddle/phi/common/scalar.h"
+#include "paddle/phi/kernels/funcs/broadcast_function.h"
 #ifdef PADDLE_WITH_HIP
 #include "paddle/phi/kernels/funcs/blas/blaslt_impl.hip.h"
 #else
@@ -38,6 +41,7 @@ limitations under the License. */
 #if defined(PADDLE_WITH_CUDA) && CUDA_VERSION >= 11060
 #include "paddle/phi/kernels/autotune/auto_tune_base.h"
 #endif
+
 
 COMMON_DECLARE_bool(cuda_core_int8_gemm);
 
@@ -2008,7 +2012,6 @@ void MatmulKernel(const Context& ctx,
       std::swap(const_cast<DDim&>(x_dims)[x_dims.size() - 1],
                 const_cast<DDim&>(x_dims)[x_dims.size() - 2]);
     }
-
     if (transpose_y && y_dims.size() >= 2) {
       std::swap(const_cast<DDim&>(y_dims)[y_dims.size() - 1],
                 const_cast<DDim&>(y_dims)[y_dims.size() - 2]);
@@ -2033,39 +2036,31 @@ void MatmulKernel(const Context& ctx,
 
     DDim out_dims = make_ddim(out_shape);
     out->Resize(out_dims);
-    ctx.template Alloc<T>(out);
+    ctx.template Alloc<T>(out); 
     return;
   }
 
-template <typename T, typename Context>
-void MatmulWithFlattenKernelImpl(const Context& dev_ctx,
-                                 const DenseTensor& x,
-                                 const DenseTensor& y,
-                                 int x_num_col_dims,
-                                 int y_num_col_dims,
-                                 DenseTensor* out) {
-  const DenseTensor x_matrix =
-      x.dims().size() > 2 ? phi::ReshapeToMatrix(x, x_num_col_dims) : x;
-  const DenseTensor y_matrix =
-      y.dims().size() > 2 ? phi::ReshapeToMatrix(y, y_num_col_dims) : y;
+  PADDLE_ENFORCE_GE(
+      common::product(x.dims()),
+      0,
+      common::errors::InvalidArgument(
+          "The dims of Input(X) should be greater than or equal to 0."));
+  PADDLE_ENFORCE_GE(
+      common::product(y.dims()),
+      0,
+      common::errors::InvalidArgument(
+          "The dims of Input(Y) should be greater than or equal to 0."));
 
-  dev_ctx.template Alloc<T>(out);
-  auto z_dim = out->dims();
-  if (z_dim.size() != 2) {
-    out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
-  }
+  const std::vector<std::int64_t> x_dims = common::vectorize(x.dims());
+  const std::vector<std::int64_t> y_dims = common::vectorize(y.dims());
 
-  auto blas = phi::funcs::GetBlas<Context, T>(dev_ctx);
-
-  blas.MatMul(x_matrix, y_matrix, out);
-  if (z_dim.size() != 2) {
-    out->Resize(z_dim);
-  }
+  MatmulJudgeDtypeKernel<Context, T>(
+      ctx, x, y, x_dims, y_dims, out, transpose_x, transpose_y);
 }
 
-#ifdef PADDLE_WITH_CUDA
+}
 
-template <typename Context>
+template <typename T, typename Context>
 void MatmulWithFlattenKernelInt8Impl(const Context& dev_ctx,
                                      const DenseTensor& x,
                                      const DenseTensor& y,
