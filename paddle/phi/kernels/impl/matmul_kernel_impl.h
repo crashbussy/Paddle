@@ -21,6 +21,9 @@ limitations under the License. */
 #include "paddle/phi/kernels/autotune/cache_base.h"
 #include "paddle/phi/kernels/cast_kernel.h"
 #include "paddle/phi/kernels/funcs/blas/blas.h"
+#include "paddle/phi/core/context.h"
+#include "paddle/phi/common/scalar.h"
+#include "paddle/phi/kernels/funcs/broadcast_function.h"
 #ifdef PADDLE_WITH_HIP
 #include "paddle/phi/kernels/funcs/blas/blaslt_impl.hip.h"
 #else
@@ -38,6 +41,7 @@ limitations under the License. */
 #if defined(PADDLE_WITH_CUDA) && CUDA_VERSION >= 11060
 #include "paddle/phi/kernels/autotune/auto_tune_base.h"
 #endif
+
 
 COMMON_DECLARE_bool(cuda_core_int8_gemm);
 
@@ -2000,29 +2004,33 @@ void MatmulKernel(const Context& ctx,
                   bool transpose_x,
                   bool transpose_y,
                   DenseTensor* out) {
+  // Step 1: 处理空张量情况，保留 shape 结构
   if (x.numel() == 0 || y.numel() == 0) {
     auto x_dims = x.dims();
     auto y_dims = y.dims();
 
+    // 如果启用了转置，交换最后两个维度
     if (transpose_x && x_dims.size() >= 2) {
       std::swap(const_cast<DDim&>(x_dims)[x_dims.size() - 1],
                 const_cast<DDim&>(x_dims)[x_dims.size() - 2]);
     }
-
     if (transpose_y && y_dims.size() >= 2) {
       std::swap(const_cast<DDim&>(y_dims)[y_dims.size() - 1],
                 const_cast<DDim&>(y_dims)[y_dims.size() - 2]);
     }
 
+    // Step 2: 提取 batch 维度用于广播
     std::vector<int64_t> x_batch_dims(x_dims.data(), x_dims.data() + x_dims.size() - 2);
     std::vector<int64_t> y_batch_dims(y_dims.data(), y_dims.data() + y_dims.size() - 2);
 
+    // Step 3: 广播 batch 维度
     std::vector<int64_t> bcast_dims;
     if (!funcs::BroadcastTwoVec(x_batch_dims, y_batch_dims, &bcast_dims)) {
       PADDLE_THROW(phi::errors::InvalidArgument(
           "Failed to broadcast input batch dimensions."));
     }
 
+    // Step 4: 构造最终输出 shape
     std::vector<int64_t> out_shape(bcast_dims.begin(), bcast_dims.end());
 
     int64_t m = transpose_x ? x_dims[x_dims.size() - 1] : x_dims[x_dims.size() - 2];
@@ -2033,9 +2041,31 @@ void MatmulKernel(const Context& ctx,
 
     DDim out_dims = make_ddim(out_shape);
     out->Resize(out_dims);
-    ctx.template Alloc<T>(out);
+    ctx.template Alloc<T>(out);  // 分配内存（虽然大小为 0）
     return;
   }
+
+  // Step 5: 非空张量检查合法性
+  PADDLE_ENFORCE_GE(
+      common::product(x.dims()),
+      0,
+      common::errors::InvalidArgument(
+          "The dims of Input(X) should be greater than or equal to 0."));
+  PADDLE_ENFORCE_GE(
+      common::product(y.dims()),
+      0,
+      common::errors::InvalidArgument(
+          "The dims of Input(Y) should be greater than or equal to 0."));
+
+  // Step 6: 获取维度并调用后续 matmul 流程
+  const std::vector<std::int64_t> x_dims = common::vectorize(x.dims());
+  const std::vector<std::int64_t> y_dims = common::vectorize(y.dims());
+
+  MatmulJudgeDtypeKernel<Context, T>(
+      ctx, x, y, x_dims, y_dims, out, transpose_x, transpose_y);
+}
+
+}
 
 template <typename T, typename Context>
 void MatmulWithFlattenKernelInt8Impl(const Context& dev_ctx,
