@@ -2054,6 +2054,34 @@ void MatmulKernel(const Context& ctx,
 }
 
 template <typename T, typename Context>
+void MatmulWithFlattenKernelImpl(const Context& dev_ctx,
+                                 const DenseTensor& x,
+                                 const DenseTensor& y,
+                                 int x_num_col_dims,
+                                 int y_num_col_dims,
+                                 DenseTensor* out) {
+  const DenseTensor x_matrix =
+      x.dims().size() > 2 ? phi::ReshapeToMatrix(x, x_num_col_dims) : x;
+  const DenseTensor y_matrix =
+      y.dims().size() > 2 ? phi::ReshapeToMatrix(y, y_num_col_dims) : y;
+
+  dev_ctx.template Alloc<T>(out);
+  auto z_dim = out->dims();
+  if (z_dim.size() != 2) {
+    out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
+  }
+
+  auto blas = phi::funcs::GetBlas<Context, T>(dev_ctx);
+
+  blas.MatMul(x_matrix, y_matrix, out);
+  if (z_dim.size() != 2) {
+    out->Resize(z_dim);
+  }
+}
+
+#ifdef PADDLE_WITH_CUDA
+
+template <typename T, typename Context>
 void MatmulWithFlattenKernelInt8Impl(const Context& dev_ctx,
                                      const DenseTensor& x,
                                      const DenseTensor& y,
