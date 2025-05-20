@@ -17,6 +17,7 @@ import numpy as np
 from op_test import OpTest, convert_float_to_uint16
 
 import paddle
+
 from paddle import base, tensor
 from paddle.base import core
 
