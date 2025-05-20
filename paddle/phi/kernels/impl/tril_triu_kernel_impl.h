@@ -26,6 +26,10 @@ void TrilTriuKernel(const Context& ctx,
                     int diagonal,
                     bool lower,
                     DenseTensor* out) {
+  if (out && out->numel() == 0) {
+    ctx.template Alloc<T>(out);
+    return;
+  }
   const auto* x_data = x.data<T>();
   auto* out_data = ctx.template Alloc<T>(out);
 
