@@ -13,10 +13,11 @@
 # limitations under the License.
 
 import unittest
+
 import numpy as np
 from op_test import OpTest
+
 import paddle
-from paddle.base import core
 
 paddle.enable_static()
 
@@ -102,7 +103,6 @@ class XPUTestZeroAllDims(XPUTestTrilTriu_ZeroSize):
         self.shape = (0, 0, 0)
         self.diagonal = 1
         self.lower = np.random.choice([True, False])
-
 
 
 if __name__ == '__main__':
