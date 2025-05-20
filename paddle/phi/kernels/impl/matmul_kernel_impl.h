@@ -22,6 +22,7 @@ limitations under the License. */
 #include "paddle/phi/kernels/cast_kernel.h"
 #include "paddle/phi/kernels/funcs/blas/blas.h"
 #include "paddle/phi/common/scalar.h"
+#include "paddle/phi/core/ddim.h"
 #include "paddle/phi/kernels/funcs/broadcast_function.h"
 #ifdef PADDLE_WITH_HIP
 #include "paddle/phi/kernels/funcs/blas/blaslt_impl.hip.h"
@@ -2004,38 +2005,33 @@ void MatmulKernel(const Context& ctx,
                   bool transpose_y,
                   DenseTensor* out) {
   if (x.numel() == 0 || y.numel() == 0) {
-    auto x_dims = x.dims();
-    auto y_dims = y.dims();
+    std::vector<int64_t> x_dim_vec = common::vectorize(x.dims());
+    std::vector<int64_t> y_dim_vec = common::vectorize(y.dims());
 
-    if (transpose_x && x_dims.size() >= 2) {
-      std::swap(const_cast<DDim&>(x_dims)[x_dims.size() - 1],
-                const_cast<DDim&>(x_dims)[x_dims.size() - 2]);
+    if (transpose_x && x_dim_vec.size() >= 2) {
+      std::swap(x_dim_vec[x_dim_vec.size() - 1], x_dim_vec[x_dim_vec.size() - 2]);
     }
-    if (transpose_y && y_dims.size() >= 2) {
-      std::swap(const_cast<DDim&>(y_dims)[y_dims.size() - 1],
-                const_cast<DDim&>(y_dims)[y_dims.size() - 2]);
+    if (transpose_y && y_dim_vec.size() >= 2) {
+      std::swap(y_dim_vec[y_dim_vec.size() - 1], y_dim_vec[y_dim_vec.size() - 2]);
     }
 
-    std::vector<int64_t> x_batch_dims(x_dims.data(), x_dims.data() + x_dims.size() - 2);
-    std::vector<int64_t> y_batch_dims(y_dims.data(), y_dims.data() + y_dims.size() - 2);
+    std::vector<int64_t> x_batch_dims(x_dim_vec.begin(), x_dim_vec.end() - 2);
+    std::vector<int64_t> y_batch_dims(y_dim_vec.begin(), y_dim_vec.end() - 2);
 
     std::vector<int64_t> bcast_dims;
-    if (!funcs::BroadcastTwoVec(x_batch_dims, y_batch_dims, &bcast_dims)) {
+    if (!phi::funcs::BroadcastTwoVec(x_batch_dims, y_batch_dims, &bcast_dims)) {
       PADDLE_THROW(phi::errors::InvalidArgument(
           "Failed to broadcast input batch dimensions."));
     }
 
-    std::vector<int64_t> out_shape(bcast_dims.begin(), bcast_dims.end());
-
-    int64_t m = transpose_x ? x_dims[x_dims.size() - 1] : x_dims[x_dims.size() - 2];
-    int64_t n = transpose_y ? y_dims[y_dims.size() - 2] : y_dims[y_dims.size() - 1];
-
+    std::vector<int64_t> out_shape(bcast_dims);
+    int64_t m = transpose_x ? x_dim_vec.back() : x_dim_vec[x_dim_vec.size() - 2];
+    int64_t n = transpose_y ? y_dim_vec[y_dim_vec.size() - 2] : y_dim_vec.back();
     out_shape.push_back(m);
     out_shape.push_back(n);
 
-    DDim out_dims = make_ddim(out_shape);
-    out->Resize(out_dims);
-    ctx.template Alloc<T>(out); 
+    out->Resize(common::make_ddim(out_shape));
+    ctx.template Alloc<T>(out);
     return;
   }
 
@@ -2050,13 +2046,11 @@ void MatmulKernel(const Context& ctx,
       common::errors::InvalidArgument(
           "The dims of Input(Y) should be greater than or equal to 0."));
 
-  const std::vector<std::int64_t> x_dims = common::vectorize(x.dims());
-  const std::vector<std::int64_t> y_dims = common::vectorize(y.dims());
+  const std::vector<int64_t> x_dims = common::vectorize(x.dims());
+  const std::vector<int64_t> y_dims = common::vectorize(y.dims());
 
   MatmulJudgeDtypeKernel<Context, T>(
       ctx, x, y, x_dims, y_dims, out, transpose_x, transpose_y);
-}
-
 }
 
 template <typename T, typename Context>
