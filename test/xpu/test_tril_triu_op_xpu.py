@@ -129,23 +129,40 @@ class XPUTestTrilTriuOp(XPUOpTestWrapper):
             self.diagonal = -100
             self.Xshape = (2, 2, 3, 4, 5)
 
-    class TestTrilTriuOp_ZeroSize(XPUTestTrilTriuOp.TestTrilTriuOp):
-    def initTestCase(self):
-        self.real_op_type = np.random.choice(['triu', 'tril'])
-        self.real_np_op = getattr(np, self.real_op_type)
-        self.diagonal = 0
-        zero_shape_options = [
-            (0, 3),
-            (3, 0),
-            (2, 0, 5),
-            (4, 1, 0),
-            (0, 0, 1),
-            (1, 0, 0, 2),
-        ]
-        self.Xshape = zero_shape_options[
-            np.random.choice(len(zero_shape_options))
-        ]
-        self.dtype = np.float32
+    class TestTrilTriuOp_ZeroSize1(XPUTestTrilTriuOp.TestTrilTriuOp):
+         def initTestCase(self):
+            self.diagonal = -1
+            self.Xshape = (2, 0, 3, 4, 5)
+
+    class TestTrilTriuOp_ZeroSize2(XPUTestTrilTriuOp.TestTrilTriuOp):
+         def initTestCase(self):
+            self.diagonal = 1
+            self.Xshape = (0, 0, 3, 4, 5)
+
+    class TestTrilTriuOp_ZeroSize3(XPUTestTrilTriuOp.TestTrilTriuOp):
+         def initTestCase(self):
+            self.diagonal = -1
+            self.Xshape = (2, 0)
+
+    class TestTrilTriuOp_ZeroSize4(XPUTestTrilTriuOp.TestTrilTriuOp):
+         def initTestCase(self):
+            self.diagonal = -1
+            self.Xshape = (2, 0, 3)
+
+    class TestTrilTriuOp_ZeroSize5(XPUTestTrilTriuOp.TestTrilTriuOp):
+         def initTestCase(self):
+            self.diagonal = 10
+            self.Xshape = (2, 0, 3)
+
+    class TestTrilTriuOp_ZeroSize6(XPUTestTrilTriuOp.TestTrilTriuOp):
+         def initTestCase(self):
+            self.diagonal = 11
+            self.Xshape = (2, 0, 3)
+
+    class TestTrilTriuOp_ZeroSize7(XPUTestTrilTriuOp.TestTrilTriuOp):
+         def initTestCase(self):
+            self.diagonal = 4
+            self.Xshape = (2, 0, 7)
 
 
 class TestTrilTriuOpError(unittest.TestCase):
