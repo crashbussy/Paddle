@@ -26,10 +26,6 @@ void TrilTriuGradKernel(const Context& ctx,
                         int diagonal,
                         bool lower,
                         DenseTensor* x_grad) {
-  if (x_grad && x_grad->numel() == 0) {
-    ctx.template Alloc<T>(x_grad);
-    return;
-  }
 
   const auto* dout_data = out_grad.data<T>();
   auto* dx_data = ctx.template Alloc<T>(x_grad);
