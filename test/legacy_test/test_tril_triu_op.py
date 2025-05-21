@@ -326,6 +326,38 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
+class TestTrilTriuZeroSize(TrilTriuOpDefaultTest):
+    def initTestCase(self):
+        self.real_op_type = np.random.choice(['triu', 'tril'])  # 随机选择 tril 或 triu
+        self.diagonal = 0
+        self.init_dtype()
+        zero_shape_options = [
+            (0, 3),
+            (3, 0),
+            (2, 0, 5),
+            (4, 1, 0),
+            (0, 0, 1),
+        ]
+        chosen_shape = zero_shape_options[np.random.choice(len(zero_shape_options))]
+        if self.dtype in (np.complex64, np.complex128):
+            self.X = (
+                np.random.uniform(-1, 1, chosen_shape)
+                + 1j * np.random.uniform(-1, 1, chosen_shape)
+            ).astype(self.dtype)
+        else:
+            self.X = np.random.random(chosen_shape).astype(self.dtype)
+
+    def test_check_output(self):
+        out = self.get_output()
+        expected_shape = self.X.shape
+        self.assertEqual(out.shape, expected_shape)
+        self.assertEqual(np.size(out), 0)
+
+    def test_check_grad_normal(self):
+        pass
+
+    def get_output(self):
+        return self.real_np_op(self.X, self.diagonal) if self.diagonal else self.real_np_op(self.X)
 
 if __name__ == '__main__':
     unittest.main()
