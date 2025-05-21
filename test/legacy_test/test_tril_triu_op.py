@@ -326,7 +326,7 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
-     def test_0size_api(self):
+    def test_0size_api(self):
         paddle.enable_static()
 
         dtypes = ['float16', 'float32', 'complex64', 'complex128']
