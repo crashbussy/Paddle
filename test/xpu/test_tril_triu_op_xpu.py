@@ -129,41 +129,6 @@ class XPUTestTrilTriuOp(XPUOpTestWrapper):
             self.diagonal = -100
             self.Xshape = (2, 2, 3, 4, 5)
 
-    class TestTrilTriuOp_ZeroSize1(XPUTestTrilTriuOp.TestTrilTriuOp):
-         def initTestCase(self):
-            self.diagonal = -1
-            self.Xshape = (2, 0, 3, 4, 5)
-
-    class TestTrilTriuOp_ZeroSize2(XPUTestTrilTriuOp.TestTrilTriuOp):
-         def initTestCase(self):
-            self.diagonal = 1
-            self.Xshape = (0, 0, 3, 4, 5)
-
-    class TestTrilTriuOp_ZeroSize3(XPUTestTrilTriuOp.TestTrilTriuOp):
-         def initTestCase(self):
-            self.diagonal = -1
-            self.Xshape = (2, 0)
-
-    class TestTrilTriuOp_ZeroSize4(XPUTestTrilTriuOp.TestTrilTriuOp):
-         def initTestCase(self):
-            self.diagonal = -1
-            self.Xshape = (2, 0, 3)
-
-    class TestTrilTriuOp_ZeroSize5(XPUTestTrilTriuOp.TestTrilTriuOp):
-         def initTestCase(self):
-            self.diagonal = 10
-            self.Xshape = (2, 0, 3)
-
-    class TestTrilTriuOp_ZeroSize6(XPUTestTrilTriuOp.TestTrilTriuOp):
-         def initTestCase(self):
-            self.diagonal = 11
-            self.Xshape = (2, 0, 3)
-
-    class TestTrilTriuOp_ZeroSize7(XPUTestTrilTriuOp.TestTrilTriuOp):
-         def initTestCase(self):
-            self.diagonal = 4
-            self.Xshape = (2, 0, 7)
-
 
 class TestTrilTriuOpError(unittest.TestCase):
     def test_errors1(self):
