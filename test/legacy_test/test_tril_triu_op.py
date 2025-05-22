@@ -357,5 +357,6 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
+
 if __name__ == '__main__':
     unittest.main()
