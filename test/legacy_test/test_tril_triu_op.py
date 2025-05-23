@@ -330,13 +330,23 @@ class TestTrilTriuOpAPI(unittest.TestCase):
         data = np.random.rand(0, 3, 9, 4).astype('float32')
         x = paddle.to_tensor(data)
         out = paddle.tril(x)
-        self.assertEqual(out.shape, x.shape)
+        assert out.shape == x.shape
+
+        if paddle.is_compiled_with_cuda():
+            x_gpu = x.cuda()
+            out_gpu = paddle.tril(x_gpu)
+            assert out_gpu.shape == x_gpu.shape
 
     def test_triu_0size_forward_shape(self):
         data = np.random.rand(0, 3, 9, 4).astype('float32')
         x = paddle.to_tensor(data)
         out = paddle.triu(x)
-        self.assertEqual(out.shape, x.shape)
+        assert out.shape == x.shape
+
+        if paddle.is_compiled_with_cuda():
+            x_gpu = x.cuda()
+            out_gpu = paddle.triu(x_gpu)
+            assert out_gpu.shape == x_gpu.shape
 
 
 if __name__ == '__main__':
