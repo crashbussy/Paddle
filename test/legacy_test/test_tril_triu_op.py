@@ -326,36 +326,51 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
-    def test_0size_api(self):
-        paddle.enable_static()
-
+    def test_0size_api():
         dtypes = ['float16', 'float32', 'complex64', 'complex128']
         for dtype in dtypes:
-            prog = paddle.static.Program()
-            startup_prog = paddle.static.Program()
-            with paddle.static.program_guard(prog, startup_prog):
-                data = np.random.random([0, 3, 9, 4]).astype(dtype)
-                x = paddle.static.data(
-                    shape=[0, 3, -1, 4], dtype=dtype, name='x'
-                )
-                if dtype == 'complex64' or dtype == 'complex128':
-                    data = (
-                        np.random.uniform(-1, 1, [0, 3, 9, 4])
-                        + 1j * np.random.uniform(-1, 1, [0, 3, 9, 4])
-                    ).astype(dtype)
-                triu_out = paddle.triu(x)
+            if dtype in ['complex64', 'complex128']:
+                data = (
+                    np.random.uniform(-1, 1, [0, 3, 9, 4])
+                    + 1j * np.random.uniform(-1, 1, [0, 3, 9, 4])
+                ).astype(dtype)
+            else:
+                data = np.random.rand(0, 3, 9, 4).astype(dtype)
+            x = paddle.to_tensor(data)
+            out = paddle.triu(x)
+            assert (
+                out.shape == x.shape
+            ), f"Shape mismatch: {out.shape} != {x.shape}"
+            if paddle.is_compiled_with_cuda():
+                x_gpu = x.cuda()
+                out_gpu = paddle.triu(x_gpu)
+                assert out_gpu.shape == x_gpu.shape
 
-                place = (
-                    base.CUDAPlace(0)
-                    if base.core.is_compiled_with_cuda()
-                    else base.CPUPlace()
+    def test_0size_api_with_backward():
+        dtypes = ['float16', 'float32']
+        for dtype in dtypes:
+            data = np.random.rand(0, 3, 9, 4).astype(dtype)
+            x = paddle.to_tensor(data, stop_gradient=False)
+            out = paddle.triu(x)
+            loss = out.sum()
+            loss.backward()
+            assert (
+                out.shape == x.shape
+            ), f"Shape mismatch: {out.shape} != {x.shape}"
+            assert x.grad is not None, "Gradient is None"
+            assert (
+                x.grad.shape == x.shape
+            ), f"Grad shape mismatch: {x.grad.shape} != {x.shape}"
+            if paddle.is_compiled_with_cuda():
+                x_gpu = paddle.to_tensor(
+                    data, stop_gradient=False, place=paddle.CUDAPlace(0)
                 )
-                exe = base.Executor(place)
-                triu_out = exe.run(
-                    prog,
-                    feed={"x": data},
-                    fetch_list=[triu_out],
-                )
+                out_gpu = paddle.triu(x_gpu)
+                loss_gpu = out_gpu.sum()
+                loss_gpu.backward()
+                assert out_gpu.shape == x_gpu.shape
+                assert x_gpu.grad is not None
+                assert x_gpu.grad.shape == x_gpu.shape
 
 
 if __name__ == '__main__':
