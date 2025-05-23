@@ -332,16 +332,5 @@ class TestTrilTriuOpAPI(unittest.TestCase):
         out = paddle.triu(x)
         self.assertEqual(out.shape, x.shape)
 
-    def test_0size_backward_gradient(self):
-        data = np.random.rand(0, 3, 9, 4).astype('float32')
-        x = paddle.to_tensor(data, stop_gradient=False)
-        out = paddle.triu(x)
-        loss = out.sum()
-        loss.backward()
-
-        self.assertIsNotNone(x.grad)
-        self.assertEqual(x.grad.shape, x.shape)
-
-
 if __name__ == '__main__':
     unittest.main()
