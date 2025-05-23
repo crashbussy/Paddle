@@ -326,11 +326,18 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
-    def test_0size_forward_shape(self):
+    def test_tril_0size_forward_shape(self):
+        data = np.random.rand(0, 3, 9, 4).astype('float32')
+        x = paddle.to_tensor(data)
+        out = paddle.tril(x)
+        self.assertEqual(out.shape, x.shape)
+
+    def test_triu_0size_forward_shape(self):
         data = np.random.rand(0, 3, 9, 4).astype('float32')
         x = paddle.to_tensor(data)
         out = paddle.triu(x)
         self.assertEqual(out.shape, x.shape)
+
 
 if __name__ == '__main__':
     unittest.main()
