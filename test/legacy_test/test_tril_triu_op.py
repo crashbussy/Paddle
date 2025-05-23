@@ -326,7 +326,7 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
-    def test_0size_api():
+    def test_0size_api(self):
         dtypes = ['float16', 'float32', 'complex64', 'complex128']
         for dtype in dtypes:
             if dtype in ['complex64', 'complex128']:
@@ -346,7 +346,7 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                 out_gpu = paddle.triu(x_gpu)
                 assert out_gpu.shape == x_gpu.shape
 
-    def test_0size_api_with_backward():
+    def test_0size_api_with_backward(self):
         dtypes = ['float16', 'float32']
         for dtype in dtypes:
             data = np.random.rand(0, 3, 9, 4).astype(dtype)
