@@ -372,6 +372,5 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                 assert x_gpu.grad is not None
                 assert x_gpu.grad.shape == x_gpu.shape
 
-
 if __name__ == '__main__':
     unittest.main()
