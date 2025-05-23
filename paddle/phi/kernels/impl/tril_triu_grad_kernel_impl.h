@@ -45,7 +45,6 @@ void TrilGradKernel(const Context& ctx,
                     const DenseTensor& out_grad,
                     int diagonal,
                     DenseTensor* x_grad) {
-
   TrilTriuGradKernel<T, Context>(ctx, out_grad, diagonal, true, x_grad);
 }
 
@@ -54,7 +53,6 @@ void TriuGradKernel(const Context& ctx,
                     const DenseTensor& out_grad,
                     int diagonal,
                     DenseTensor* x_grad) {
-
   TrilTriuGradKernel<T, Context>(ctx, out_grad, diagonal, false, x_grad);
 }
 
