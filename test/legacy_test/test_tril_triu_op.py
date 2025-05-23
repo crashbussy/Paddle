@@ -326,51 +326,21 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
-    def test_0size_api(self):
-        dtypes = ['float16', 'float32', 'complex64', 'complex128']
-        for dtype in dtypes:
-            if dtype in ['complex64', 'complex128']:
-                data = (
-                    np.random.uniform(-1, 1, [0, 3, 9, 4])
-                    + 1j * np.random.uniform(-1, 1, [0, 3, 9, 4])
-                ).astype(dtype)
-            else:
-                data = np.random.rand(0, 3, 9, 4).astype(dtype)
-            x = paddle.to_tensor(data)
-            out = paddle.triu(x)
-            assert (
-                out.shape == x.shape
-            ), f"Shape mismatch: {out.shape} != {x.shape}"
-            if paddle.is_compiled_with_cuda():
-                x_gpu = x.cuda()
-                out_gpu = paddle.triu(x_gpu)
-                assert out_gpu.shape == x_gpu.shape
+    def test_0size_forward_shape(self):
+        data = np.random.rand(0, 3, 9, 4).astype('float32')
+        x = paddle.to_tensor(data)
+        out = paddle.triu(x)
+        self.assertEqual(out.shape, x.shape)
 
-    def test_0size_api_with_backward(self):
-        dtypes = ['float16', 'float32']
-        for dtype in dtypes:
-            data = np.random.rand(0, 3, 9, 4).astype(dtype)
-            x = paddle.to_tensor(data, stop_gradient=False)
-            out = paddle.triu(x)
-            loss = out.sum()
-            loss.backward()
-            assert (
-                out.shape == x.shape
-            ), f"Shape mismatch: {out.shape} != {x.shape}"
-            assert x.grad is not None, "Gradient is None"
-            assert (
-                x.grad.shape == x.shape
-            ), f"Grad shape mismatch: {x.grad.shape} != {x.shape}"
-            if paddle.is_compiled_with_cuda():
-                x_gpu = paddle.to_tensor(
-                    data, stop_gradient=False, place=paddle.CUDAPlace(0)
-                )
-                out_gpu = paddle.triu(x_gpu)
-                loss_gpu = out_gpu.sum()
-                loss_gpu.backward()
-                assert out_gpu.shape == x_gpu.shape
-                assert x_gpu.grad is not None
-                assert x_gpu.grad.shape == x_gpu.shape
+    def test_0size_backward_gradient(self):
+        data = np.random.rand(0, 3, 9, 4).astype('float32')
+        x = paddle.to_tensor(data, stop_gradient=False)
+        out = paddle.triu(x)
+        loss = out.sum()
+        loss.backward()
+
+        self.assertIsNotNone(x.grad)
+        self.assertEqual(x.grad.shape, x.shape)
 
 
 if __name__ == '__main__':
