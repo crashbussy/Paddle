@@ -326,27 +326,17 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
-    def test_tril_0size_forward_shape(self):
-        data = np.random.rand(0, 3, 9, 4).astype('float32')
-        x = paddle.to_tensor(data)
-        out = paddle.tril(x)
-        assert out.shape == x.shape
+class TestTrilZeroSizeShape(TrilTriuOpDefaultTest):
+    def initTestCase(self):
+        self.real_op_type = 'tril'
+        self.diagonal = 0
+        self.X = np.random.rand(0, 3, 9, 4).astype(np.float64)
 
-        if paddle.is_compiled_with_cuda():
-            x_gpu = x.cuda()
-            out_gpu = paddle.tril(x_gpu)
-            assert out_gpu.shape == x_gpu.shape
-
-    def test_triu_0size_forward_shape(self):
-        data = np.random.rand(0, 3, 9, 4).astype('float32')
-        x = paddle.to_tensor(data)
-        out = paddle.triu(x)
-        assert out.shape == x.shape
-
-        if paddle.is_compiled_with_cuda():
-            x_gpu = x.cuda()
-            out_gpu = paddle.triu(x_gpu)
-            assert out_gpu.shape == x_gpu.shape
+class TestTriuZeroSizeShape(TrilTriuOpDefaultTest):
+    def initTestCase(self):
+        self.real_op_type = 'triu'
+        self.diagonal = 0
+        self.X = np.random.rand(0, 3, 9, 4).astype(np.float64)
 
 
 class TestTrilTriu_ZeroDimGrad(OpTest):
