@@ -354,7 +354,7 @@ class TestTrilTriu_ZeroDimGrad(OpTest):
         self.real_op_type = 'tril'
         self.diagonal = 0
         self.inputs = {
-            'X': np.random.randn(0, 3, 9, 4).astype('float32')
+            'X': np.random.randn(0, 3, 9, 4).astype('float64')
         }
         self.attrs = {
             'diagonal': self.diagonal,
@@ -373,7 +373,7 @@ class TestTrilTriu_ZeroDimGrad_Triu(OpTest):
         self.real_op_type = 'triu'
         self.diagonal = 0
         self.inputs = {
-            'X': np.random.randn(0, 3, 9, 4).astype('float32')
+            'X': np.random.randn(0, 3, 9, 4).astype('float64')
         }
         self.attrs = {
             'diagonal': self.diagonal,
