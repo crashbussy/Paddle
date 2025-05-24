@@ -348,40 +348,41 @@ class TestTrilTriuOpAPI(unittest.TestCase):
             out_gpu = paddle.triu(x_gpu)
             assert out_gpu.shape == x_gpu.shape
 
+
 class TestTrilTriu_ZeroDimGrad(OpTest):
     def setUp(self):
         self.op_type = 'tril_triu'
         self.real_op_type = 'tril'
         self.diagonal = 0
-        self.inputs = {
-            'X': np.random.randn(0, 3, 9, 4).astype('float64')
-        }
+        self.inputs = {'X': np.random.randn(0, 3, 9, 4).astype('float64')}
         self.attrs = {
             'diagonal': self.diagonal,
-            'lower': True if self.real_op_type == 'tril' else False
+            'lower': True if self.real_op_type == 'tril' else False,
         }
         self.outputs = {
-            'Out': getattr(np, self.real_op_type)(self.inputs['X'], self.diagonal)
+            'Out': getattr(np, self.real_op_type)(
+                self.inputs['X'], self.diagonal
+            )
         }
-        self.python_api = paddle.tril if self.real_op_type == 'tril' else paddle.triu
+        self.python_api = (
+            paddle.tril if self.real_op_type == 'tril' else paddle.triu
+        )
 
     def test_check_grad(self):
         self.check_grad(['X'], 'Out', check_pir=True)
+
 
 class TestTrilTriu_ZeroDimGrad_Triu(OpTest):
     def setUp(self):
         self.op_type = 'tril_triu'
         self.real_op_type = 'triu'
         self.diagonal = 0
-        self.inputs = {
-            'X': np.random.randn(0, 3, 9, 4).astype('float64')
-        }
-        self.attrs = {
-            'diagonal': self.diagonal,
-            'lower': False
-        }
+        self.inputs = {'X': np.random.randn(0, 3, 9, 4).astype('float64')}
+        self.attrs = {'diagonal': self.diagonal, 'lower': False}
         self.outputs = {
-            'Out': getattr(np, self.real_op_type)(self.inputs['X'], self.diagonal)
+            'Out': getattr(np, self.real_op_type)(
+                self.inputs['X'], self.diagonal
+            )
         }
         self.python_api = paddle.triu
 
