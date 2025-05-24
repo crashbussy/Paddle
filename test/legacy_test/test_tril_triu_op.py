@@ -326,11 +326,13 @@ class TestTrilTriuOpAPI(unittest.TestCase):
                     fetch_list=[triu_out],
                 )
 
+
 class TestTrilZeroSizeShape(TrilTriuOpDefaultTest):
     def initTestCase(self):
         self.real_op_type = 'tril'
         self.diagonal = 0
         self.X = np.random.rand(0, 3, 9, 4).astype(np.float64)
+
 
 class TestTriuZeroSizeShape(TrilTriuOpDefaultTest):
     def initTestCase(self):
